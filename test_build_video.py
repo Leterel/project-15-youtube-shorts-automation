@@ -1,5 +1,5 @@
 import unittest
-from build_video import validate, fit_text, text_units
+from build_video import validate, fit_text, text_units, webvtt
 
 
 class ScriptTests(unittest.TestCase):
@@ -28,6 +28,15 @@ class ScriptTests(unittest.TestCase):
             fit_text("W"*140,10,10,34,22)
         with self.assertRaises(ValueError):
             fit_text("界"*70,630,330,48,28)
+
+    def test_subtitle_timeline_handles_minute_boundary_and_escapes_markup(self):
+        result = webvtt([{"narration":"Eigener <b>Text</b> & Wörter"},
+                         {"narration":"Zweite Szene"}, {"narration":"Dritte Szene"}], [30.125, 30, 1.25])
+        self.assertIn("00:00:30.125 --> 00:01:00.125", result)
+        self.assertIn("00:01:00.125 --> 00:01:01.375", result)
+        self.assertIn("&lt;b&gt;Text&lt;/b&gt; &amp; Wörter", result)
+        for durations in [[], [0], [float("nan")], [float("inf")], [36], [True]]:
+            with self.assertRaises(ValueError): webvtt([{"narration":"Test"}], durations)
 
 
 if __name__ == "__main__":

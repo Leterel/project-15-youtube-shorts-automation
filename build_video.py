@@ -10,6 +10,30 @@ import subprocess
 import math
 import unicodedata
 import wave
+import hashlib
+import html
+
+
+def webvtt(scenes, durations):
+    """Scene-level narration cues; explicitly not word-aligned subtitles."""
+    if len(scenes) != len(durations) or not scenes:
+        raise ValueError("Need matching scenes and durations")
+    def timestamp(milliseconds):
+        hours, rest = divmod(milliseconds, 3_600_000)
+        minutes, rest = divmod(rest, 60_000)
+        seconds, millis = divmod(rest, 1000)
+        return f"{hours:02}:{minutes:02}:{seconds:02}.{millis:03}"
+    lines = ["WEBVTT", "", "NOTE Scene-level narration; timing is not word aligned.", ""]
+    elapsed = 0.0
+    for index, (scene, duration) in enumerate(zip(scenes, durations), 1):
+        if type(duration) not in (int, float) or not math.isfinite(duration) or duration < 0.001 or duration > 35:
+            raise ValueError("Invalid cue duration")
+        start = round(elapsed * 1000)
+        elapsed += duration
+        end = round(elapsed * 1000)
+        lines.extend([str(index), f"{timestamp(start)} --> {timestamp(end)}",
+                      html.escape(" ".join(scene["narration"].split()), quote=False), ""])
+    return "\n".join(lines)
 
 
 def validate(data):
@@ -117,10 +141,20 @@ def build(script, output):
     video = next(s for s in metadata["streams"] if s["codec_type"] == "video")
     if (video["width"], video["height"]) != (720, 1280):
         raise RuntimeError("Unexpected output resolution")
+    audio_streams = [s for s in metadata["streams"] if s["codec_type"] == "audio"]
+    if len(audio_streams) != 1 or audio_streams[0]["codec_name"] != "aac" or int(audio_streams[0]["sample_rate"]) != 48000 or audio_streams[0]["channels"] != 2:
+        raise RuntimeError("Unexpected audio format")
+    if abs(float(metadata["format"]["duration"])-sum(durations)) > 0.2:
+        raise RuntimeError("Output duration differs from the scene timeline")
+    (output / "narration.vtt").write_text(webvtt(scenes, durations), encoding="utf-8", newline="\n")
     manifest = {"status": "local-unpublished-draft", "width": 720, "height": 1280,
                 "durationSeconds": float(metadata["format"]["duration"]),
                 "sceneDurations": durations, "voice": "Windows SAPI, first installed German voice",
-                "uploaded": False, "factsAndListeningReviewRequired": True, "textLayouts": layouts}
+                "uploaded": False, "factsAndListeningReviewRequired": True, "textLayouts": layouts,
+                "scriptSha256": hashlib.sha256(script.read_bytes()).hexdigest(),
+                "videoSha256": hashlib.sha256((output / "draft-short.mp4").read_bytes()).hexdigest(),
+                "subtitles": {"file": "narration.vtt", "alignment": "scene-level, not word-aligned"},
+                "audio": {"codec": "aac", "sampleRate": 48000, "channels": 2}}
     (output / "verification.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(json.dumps(manifest))
 

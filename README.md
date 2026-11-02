@@ -95,3 +95,17 @@ Windows keine zusätzlichen Leerzeilen rendert. Szenen behalten eigene Textdatei
 Die installierte Schrift wird direkt verwendet, weder kopiert noch gelöscht.
 Das ersetzt keine Sichtprüfung bei ungewöhnlichen Zeichen oder neuen Inhalten.
 Der eigene Quellcode steht unter MIT; siehe LICENSE.
+
+### Untertitel und nachvollziehbare Ausgabe — 02.11.2026
+
+Neue Builds liefern `narration.vtt` mit der vollständigen gesprochenen Erzählung
+und einem Cue je Szene. Das ist eine Szenenzeitleiste einschließlich der kurzen
+Ausklangzeit, keine wortgenaue Spracherkennung. Vor Veröffentlichung prüfen.
+`verification.json` enthält SHA-256 von Eingabeskript und fertigem Video sowie
+das geprüfte AAC-Stereoformat (48 kHz). Auflösung, Audioformat und tatsächliche
+Dauer werden vor dem Erfolgsmanifest geprüft. Bei Fehlern bleibt der neue
+Arbeitsordner zur Diagnose erhalten; vorherige Ausgaben werden nicht ersetzt.
+
+## Entwicklung und Übergabe
+
+[AGENTS.md](AGENTS.md) bündelt den Einstieg für Entwickler und KI-Agenten; [TESTING.md](TESTING.md) nennt reproduzierbare Prüfungen und deren Grenzen. Der aktuelle Übergabestand steht in [HANDOFF.md](HANDOFF.md).
