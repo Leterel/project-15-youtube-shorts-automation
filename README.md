@@ -57,3 +57,30 @@ SAPI-Stimmen:
 
 ## Projektabgrenzung
 Dieses Repository gehört ausschließlich zur YouTube-Shorts-Automatisierung. Es ist unabhängig von anderen GitHub-/GitLab-Projekten und weiteren lokalen Arbeitsverzeichnissen.
+
+## Lokaler Videoprototyp — 02.11.2026
+
+`build_video.py` erzeugt aus einem eigenen JSON-Skript deutsche SAPI-Sprache
+und ein vertikales 720×1280-MP4 mit eigenen Textgrafiken. Keine Python-Pakete,
+Downloads, Konten oder laufenden Kosten. Windows, Python 3.12+, FFmpeg/ffprobe,
+Arial und eine installierte deutsche SAPI-Stimme werden vorab geprüft.
+
+```powershell
+python -m unittest -v
+python build_video.py example.json --output build/erster-entwurf
+```
+
+Der Zielordner muss neu sein; vorhandene Dateien werden nicht überschrieben.
+`verification.json` enthält Auflösung und tatsächliche Dauer. Szenendauern folgen
+der Sprachausgabe. Der Entwurf ist sichtbar als solcher und mit synthetischer
+Stimme gekennzeichnet. Vor einer Veröffentlichung Text, Ton, Lesbarkeit und
+Quellen prüfen. Kein automatischer Upload und keine Monetarisierung eingerichtet.
+Die Beispielaussagen zu Gewichten und Kontext sind technische Erklärungen ohne
+konkrete Speicherbedarfszusage; unterschiedliche Modellarchitekturen unterscheiden
+sich. Nächster Schritt: Hör-/Sichtprüfung und engeres Timing auf etwa 30 Sekunden.
+
+Technische Primärquellen für das Beispiel (geprüft 02.11.2026):
+[Hugging Face: KV-Cache](https://github.com/huggingface/transformers/blob/main/docs/source/en/cache_explanation.md)
+und [Cache-Speicherstrategien](https://huggingface.co/docs/transformers/v4.50.0/kv_cache).
+Das lokale SAPI-Hilfsskript läuft mit einer nur für den Unterprozess geltenden
+ExecutionPolicy; Systemeinstellungen werden nicht geändert.

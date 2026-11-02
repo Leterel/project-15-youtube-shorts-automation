@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "heading": "Warum braucht KI so viel Speicher?",
+      "caption": "Ein Modell besteht aus sehr vielen gelernten Zahlen.",
+      "narration": "Warum braucht KI so viel Arbeitsspeicher? Ein Sprachmodell enthält viele gelernte Zahlen. Diese Gewichte müssen beim Rechnen verfügbar sein."
+    },
+    {
+      "heading": "Die Zahlen brauchen Platz",
+      "caption": "Mehr Gewichte und höhere Genauigkeit benötigen mehr Speicher.",
+      "narration": "Mehr Gewichte und genauere Zahlen brauchen mehr Platz. Kompaktere Zahlen können den Speicherbedarf senken."
+    },
+    {
+      "heading": "Auch der Kontext zählt",
+      "caption": "Zusätzlich brauchen laufende Berechnungen und der Gesprächskontext Speicher.",
+      "narration": "Dazu kommen laufende Berechnungen und zwischengespeicherte Informationen zum bisherigen Text. Ein längerer Kontext kann deshalb zusätzlichen Speicher benötigen."
+    }
+  ]
+}
