@@ -84,3 +84,14 @@ Technische Primärquellen für das Beispiel (geprüft 02.11.2026):
 und [Cache-Speicherstrategien](https://huggingface.co/docs/transformers/v4.50.0/kv_cache).
 Das lokale SAPI-Hilfsskript läuft mit einer nur für den Unterprozess geltenden
 ExecutionPolicy; Systemeinstellungen werden nicht geändert.
+
+### Layoutkorrektur — 02.11.2026
+
+Vor dem Anlegen des Zielordners werden Überschriften und Untertitel konservativ
+nach Breite und Höhe umbrochen; bei Bedarf wird die Schrift bis zu einer
+festgelegten Mindestgröße verkleinert. Nicht passende Texte werden abgewiesen.
+Zeilenumbrüche werden ausdrücklich als LF geschrieben, damit FFmpeg unter
+Windows keine zusätzlichen Leerzeilen rendert. Szenen behalten eigene Textdateien.
+Die installierte Schrift wird direkt verwendet, weder kopiert noch gelöscht.
+Das ersetzt keine Sichtprüfung bei ungewöhnlichen Zeichen oder neuen Inhalten.
+Der eigene Quellcode steht unter MIT; siehe LICENSE.

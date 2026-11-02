@@ -7,7 +7,8 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
-import textwrap
+import math
+import unicodedata
 import wave
 
 
@@ -37,22 +38,56 @@ def command(args, cwd):
     subprocess.run(args, cwd=cwd, check=True, stdout=subprocess.DEVNULL)
 
 
+def text_units(text):
+    return sum(0 if unicodedata.combining(c) else
+               2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in text)
+
+
+def fit_text(text, width, height, maximum, minimum):
+    """Conservative em-sized glyph budget, with explicit line/height limits."""
+    normalized = " ".join(text.split())
+    for size in range(maximum, minimum-1, -1):
+        limit = width // size
+        lines, line = [], ""
+        for word in normalized.split(" "):
+            if line and text_units(line + " " + word) <= limit:
+                line += " " + word
+                continue
+            if line:
+                lines.append(line)
+                line = ""
+            for char in word:
+                if line and text_units(line + char) > limit:
+                    lines.append(line)
+                    line = ""
+                line += char
+        if line:
+            lines.append(line)
+        if (lines and all(text_units(line)*size <= width for line in lines)
+                and len(lines) * (math.ceil(size*1.5) + 8) <= height):
+            return {"text": "\n".join(lines), "fontSize": size, "lines": len(lines)}
+    raise ValueError("Text does not fit; shorten it before rendering")
+
+
 def build(script, output):
     scenes = validate(json.loads(script.read_text(encoding="utf-8")))
+    layouts = [{"heading": fit_text(s["heading"], 630, 330, 48, 28),
+                "caption": fit_text(s["caption"], 590, 260, 34, 22)} for s in scenes]
     ffmpeg, ffprobe = shutil.which("ffmpeg"), shutil.which("ffprobe")
     shell = shutil.which("powershell.exe")
     font = Path("C:/Windows/Fonts/arial.ttf")
     if not all([ffmpeg, ffprobe, shell, font.exists()]):
         raise RuntimeError("Need Windows SAPI, powershell.exe, FFmpeg, ffprobe and Arial")
     output.mkdir(parents=True, exist_ok=False)
-    shutil.copyfile(font, output / "font.ttf")
+    font_filter = "fontfile='" + font.as_posix().replace(":", "\\:") + "'"
     speech = Path(__file__).with_name("speak.ps1").resolve()
     durations = []
     for i, scene in enumerate(scenes):
         prefix = f"scene-{i:02d}"
         (output / (prefix+"-speech.txt")).write_text(scene["narration"], encoding="utf-8-sig")
-        (output / "heading.txt").write_text(textwrap.fill(scene["heading"], 22), encoding="utf-8")
-        (output / "caption.txt").write_text(textwrap.fill(scene["caption"], 28), encoding="utf-8")
+        layout = layouts[i]
+        (output / (prefix+"-heading.txt")).write_text(layout["heading"]["text"], encoding="utf-8", newline="\n")
+        (output / (prefix+"-caption.txt")).write_text(layout["caption"]["text"], encoding="utf-8", newline="\n")
         command([shell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(speech),
                  "-TextPath", str(output / (prefix+"-speech.txt")),
                  "-OutputPath", str(output / (prefix+".wav"))], output)
@@ -62,12 +97,12 @@ def build(script, output):
             raise ValueError("Scene too long; shorten narration")
         durations.append(duration)
         filters = ("drawbox=x=45:y=100:w=630:h=12:color=0xB7F571:t=fill,"
-                   "drawtext=fontfile=font.ttf:text='TECHNIK IN 30 SEKUNDEN':fontsize=23:fontcolor=0xB7F571:x=45:y=150,"
-                   "drawtext=fontfile=font.ttf:textfile=heading.txt:expansion=none:fontsize=48:fontcolor=white:x=45:y=290:line_spacing=15,"
+                   f"drawtext={font_filter}:text='TECHNIK KURZ ERKLAERT':fontsize=23:fontcolor=0xB7F571:x=45:y=150,"
+                   f"drawtext={font_filter}:textfile={prefix}-heading.txt:expansion=none:fontsize={layout['heading']['fontSize']}:fontcolor=white:x=45:y=290:line_spacing=8,"
                    "drawbox=x=45:y=660:w=630:h=330:color=0x24304A:t=fill,"
-                   "drawtext=fontfile=font.ttf:textfile=caption.txt:expansion=none:fontsize=34:fontcolor=0xD4DEEF:x=65:y=700:line_spacing=14,"
+                   f"drawtext={font_filter}:textfile={prefix}-caption.txt:expansion=none:fontsize={layout['caption']['fontSize']}:fontcolor=0xD4DEEF:x=65:y=700:line_spacing=8,"
                    f"drawbox=x=45:y=1040:w=630:h=6:color=0x33455C:t=fill,drawbox=x=45:y=1040:w={630*(i+1)/len(scenes):.0f}:h=6:color=0xB7F571:t=fill,"
-                   "drawtext=fontfile=font.ttf:text='LOKALER ENTWURF / SYNTHETISCHE STIMME':fontsize=19:fontcolor=0x99AAC2:x=45:y=1140")
+                   f"drawtext={font_filter}:text='LOKALER ENTWURF / SYNTHETISCHE STIMME':fontsize=19:fontcolor=0x99AAC2:x=45:y=1140")
         command([ffmpeg, "-hide_banner", "-loglevel", "error", "-n", "-f", "lavfi", "-i",
                  "color=c=0x101928:s=720x1280:r=30", "-i", prefix+".wav", "-vf", filters,
                  "-af", "apad", "-t", str(duration), "-c:v", "libx264", "-preset", "fast",
@@ -85,10 +120,8 @@ def build(script, output):
     manifest = {"status": "local-unpublished-draft", "width": 720, "height": 1280,
                 "durationSeconds": float(metadata["format"]["duration"]),
                 "sceneDurations": durations, "voice": "Windows SAPI, first installed German voice",
-                "uploaded": False, "factsAndListeningReviewRequired": True}
+                "uploaded": False, "factsAndListeningReviewRequired": True, "textLayouts": layouts}
     (output / "verification.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    # Do not include the system font in deliverables.
-    (output / "font.ttf").unlink()
     print(json.dumps(manifest))
 
 
