@@ -1,10 +1,10 @@
-# Projekt 16: YouTube Shorts Automation
+# Projekt 15: YouTube Shorts Automation
 
 ## Ziel
 Ein weitgehend automatisierter deutschsprachiger YouTube-Shorts-Kanal im Bereich Technik, Computer und KI-Fakten. Möglichst geringe laufende Kosten (Startbudget: 0 EUR), ohne eigene Kamera und ohne eigene Sprachaufnahme. Langfristiges Ziel: Einnahmen über YouTube, sofern die Monetarisierungsvoraussetzungen erfüllt werden.
 
 ## Status (31.10.2026)
-- GitHub-Repository angelegt, privat.
+- GitHub-Repository angelegt, öffentlich.
 - Windows und PowerShell 7.6.9 im Einsatz.
 - FFmpeg 9.0.2 vorhanden und ausführbar.
 - Python 3.12.10 vorhanden und ausführbar.
